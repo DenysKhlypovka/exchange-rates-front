@@ -1,5 +1,7 @@
 import React from 'react';
+import DatePicker from "react-date-picker";
 import axios from 'axios';
+import {Field, Form, Formik, useFormik} from "formik";
 
 export default class BankData extends React.Component {
   constructor(props) {
@@ -12,31 +14,23 @@ export default class BankData extends React.Component {
       bankType: [],
       rates: {}
     },
-    bankTypes: {},
-    selectedBank: {}
+    selectedBank: {},
+    bankTypes: {}
   }
 
   componentDidMount() {
-    axios.get(`http://localhost:8080/banks/bank-types`)
-      .then(res => {
-        this.setState({bankTypes: res.data});
-      })
-  }
-
-  onOptionSelect(event) {
-    const selectedBank = event.target.value;
-    axios.post(`http://localhost:8080/banks/bank-data/` + selectedBank)
+    axios.get(`http://localhost:8080/api/banks/bank-types`)
       .then(res => {
         this.setState({
-          banksData: res.data,
-          selectedBank: selectedBank
+          bankTypes: res.data
         });
       })
   }
 
   render() {
-    const rates = [];
     const banks = [];
+    const rates = [];
+
     Object.keys(this.state.banksData.rates).forEach(currency => {
       rates.push(
         <RateRow
@@ -55,9 +49,29 @@ export default class BankData extends React.Component {
 
     return (
       <div>
-        <select onChange={this.onOptionSelect}>
-          {banks}
-        </select>
+        <Formik
+          initialValues={{
+            selectedBank: '',
+            date: ''
+          }}
+          validate={values => {
+            const selectedBank = values.selectedBank;
+            axios.post(`http://localhost:8080/api/banks/bank-data/` + selectedBank)
+              .then(res => {
+                this.setState({
+                  banksData: res.data,
+                  selectedBank: selectedBank
+                });
+              })
+          }}
+        >
+          <Form>
+            <Field id={selectedBank} name={selectedBank} component="select">
+              {banks}
+            </Field>
+            <Field id={date} name={date} component={DatePicker}/>
+          </Form>
+        </Formik>
         <table>
           <tbody>
           <tr>
